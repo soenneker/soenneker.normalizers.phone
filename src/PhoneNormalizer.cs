@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Soenneker.Normalizers.Phone;
 
 /// <inheritdoc cref="IPhoneNormalizer"/>
-public class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNormalizer
+public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNormalizer
 {
     public PhoneNormalizer(ILogger<PhoneNormalizer> logger) : base(logger)
     {
