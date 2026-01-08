@@ -1,13 +1,12 @@
 ﻿using Soenneker.Normalizers.Phone.Abstract;
-using System;
 using Soenneker.Normalizers.Base;
 using Soenneker.Extensions.String;
-using Soenneker.Extensions.Char;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace Soenneker.Normalizers.Phone;
 
-/// <inheritdoc cref="IPhoneNormalizer"/>
 public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNormalizer
 {
     public PhoneNormalizer(ILogger<PhoneNormalizer> logger) : base(logger)
@@ -19,48 +18,64 @@ public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNo
         if (input.IsNullOrWhiteSpace())
             return null;
 
-        // Pre-allocate buffer on stack for max expected length
-        Span<char> buffer = stackalloc char[20]; // >15 digits never valid E.164
-        var i = 0;
+        bool hadPlus = input.Length != 0 && input[0] == '+';
+
+        Span<char> digits = stackalloc char[20]; // enough for 011/00 handling + headroom
+        var count = 0;
 
         foreach (char c in input)
         {
-            if (c.IsDigit())
+            if (IsAsciiDigit(c))
             {
-                if (i >= buffer.Length)
-                    return null; // too long to be valid
-                buffer[i++] = c;
+                if ((uint)count >= (uint)digits.Length)
+                    return null;
+
+                digits[count++] = c;
             }
         }
 
-        if (i == 10)
+        if (count == 10)
+            return Create("+1", digits[..10]);
+
+        if (count == 11 && digits[0] == '1')
+            return Create("+", digits[..11]);
+
+        if (count > 11)
         {
-            // US without country code
-            return $"+1{new string(buffer[..i])}";
+            // 011XXXXXXXX...
+            if (count >= 3 && digits[0] == '0' && digits[1] == '1' && digits[2] == '1')
+            {
+                int len = count - 3;
+                if ((uint)len is >= 11 and <= 15)
+                    return Create("+", digits.Slice(3, len));
+                return null;
+            }
+
+            // 00XXXXXXXX...
+            if (count >= 2 && digits[0] == '0' && digits[1] == '0')
+            {
+                int len = count - 2;
+                if ((uint)len is >= 11 and <= 15)
+                    return Create("+", digits.Slice(2, len));
+                return null;
+            }
         }
 
-        if (i == 11 && buffer[0] == '1')
-        {
-            // US with leading 1
-            return $"+{new string(buffer[..i])}";
-        }
-
-        // Check for international prefixes
-        if (i > 11)
-        {
-            if (buffer.StartsWith("011"))
-                return $"+{new string(buffer[3..i])}";
-
-            if (buffer.StartsWith("00"))
-                return $"+{new string(buffer[2..i])}";
-        }
-
-        // Handle + already in original input (must recheck input not buffer)
-        if (input.StartsWith('+') && i is >= 11 and <= 15)
-        {
-            return $"+{new string(buffer[..i])}";
-        }
+        if (hadPlus && (uint)count is >= 11 and <= 15)
+            return Create("+", digits[..count]);
 
         return null;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsAsciiDigit(char c) => (uint)(c - '0') <= 9;
+
+    private static string Create(string prefix, ReadOnlySpan<char> digits)
+    {
+        // One allocation: the final string.
+        var handler = new DefaultInterpolatedStringHandler(prefix.Length, 1);
+        handler.AppendLiteral(prefix);
+        handler.AppendFormatted(digits);
+        return handler.ToStringAndClear();
     }
 }
