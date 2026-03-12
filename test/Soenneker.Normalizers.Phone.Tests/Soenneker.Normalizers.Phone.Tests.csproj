@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Normalizers.Phone.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Normalizers.Phone\Soenneker.Normalizers.Phone.csproj" />
     </ItemGroup>
 
     <ItemGroup>
