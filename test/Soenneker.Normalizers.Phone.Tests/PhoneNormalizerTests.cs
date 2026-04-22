@@ -1,20 +1,19 @@
-﻿using Soenneker.Normalizers.Phone.Abstract;
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Normalizers.Phone.Abstract;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Normalizers.Phone.Tests;
 
-[Collection("Collection")]
-public class PhoneNormalizerTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class PhoneNormalizerTests : HostedUnitTest
 {
     private readonly IPhoneNormalizer _util;
 
-    public PhoneNormalizerTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public PhoneNormalizerTests(Host host) : base(host)
     {
         _util = Resolve<IPhoneNormalizer>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
