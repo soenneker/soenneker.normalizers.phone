@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Soenneker.Normalizers.Phone;
 
+/// <inheritdoc cref="IPhoneNormalizer"/>
 public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNormalizer
 {
     public PhoneNormalizer(ILogger<PhoneNormalizer> logger) : base(logger)
