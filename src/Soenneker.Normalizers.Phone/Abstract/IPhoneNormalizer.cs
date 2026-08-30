@@ -3,7 +3,7 @@
 namespace Soenneker.Normalizers.Phone.Abstract;
 
 /// <summary>
-/// A performant utility method for converting user-entered phone numbers into strict E.164 format, supporting US and international dialing conventions with minimal allocations.
+/// Normalizes supported North American and international dialing forms to a plus-prefixed sequence of ASCII digits.
 /// </summary>
 public interface IPhoneNormalizer : IBaseNormalizer<string?, string?>
 {

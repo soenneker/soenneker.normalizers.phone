@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 
 namespace Soenneker.Normalizers.Phone;
 
-/// <inheritdoc cref="IPhoneNormalizer"/>
 public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNormalizer
 {
     public PhoneNormalizer(ILogger<PhoneNormalizer> logger) : base(logger)
@@ -19,7 +18,7 @@ public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNo
         if (input.IsNullOrWhiteSpace())
             return null;
 
-        bool hadPlus = input.Length != 0 && input[0] == '+';
+        bool hadPlus = input.AsSpan().TrimStart().StartsWith("+", StringComparison.Ordinal);
 
         Span<char> digits = stackalloc char[20]; // enough for 011/00 handling + headroom
         var count = 0;
@@ -41,13 +40,21 @@ public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNo
         if (count == 11 && digits[0] == '1')
             return Create("+", digits[..11]);
 
+        if (hadPlus)
+        {
+            if ((uint)count is >= 11 and <= 15 && digits[0] != '0')
+                return Create("+", digits[..count]);
+
+            return null;
+        }
+
         if (count > 11)
         {
             // 011XXXXXXXX...
             if (count >= 3 && digits[0] == '0' && digits[1] == '1' && digits[2] == '1')
             {
                 int len = count - 3;
-                if ((uint)len is >= 11 and <= 15)
+                if ((uint)len is >= 11 and <= 15 && digits[3] != '0')
                     return Create("+", digits.Slice(3, len));
                 return null;
             }
@@ -56,14 +63,11 @@ public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNo
             if (count >= 2 && digits[0] == '0' && digits[1] == '0')
             {
                 int len = count - 2;
-                if ((uint)len is >= 11 and <= 15)
+                if ((uint)len is >= 11 and <= 15 && digits[2] != '0')
                     return Create("+", digits.Slice(2, len));
                 return null;
             }
         }
-
-        if (hadPlus && (uint)count is >= 11 and <= 15)
-            return Create("+", digits[..count]);
 
         return null;
     }

@@ -5,7 +5,7 @@ using Soenneker.Normalizers.Phone.Abstract;
 namespace Soenneker.Normalizers.Phone.Registrars;
 
 /// <summary>
-/// A performant utility method for converting user-entered phone numbers into strict E.164 format, supporting US and international dialing conventions with minimal allocations.
+/// Registers the phone-number normalizer.
 /// </summary>
 public static class PhoneNormalizerRegistrar
 {
