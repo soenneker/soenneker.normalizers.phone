@@ -19,6 +19,10 @@ public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNo
         if (input.IsNullOrWhiteSpace())
             return null;
 
+        if (input.Length is >= 12 and <= 16 && input[0] == '+' && input[1] != '0' &&
+            input.AsSpan(1).IndexOfAnyExceptInRange('0', '9') < 0)
+            return input;
+
         bool hadPlus = input.AsSpan().TrimStart().StartsWith("+", StringComparison.Ordinal);
 
         Span<char> digits = stackalloc char[20]; // enough for 011/00 handling + headroom
@@ -79,9 +83,6 @@ public sealed class PhoneNormalizer : BaseNormalizer<string?, string?>, IPhoneNo
     private static string Create(string prefix, ReadOnlySpan<char> digits)
     {
         // One allocation: the final string.
-        var handler = new DefaultInterpolatedStringHandler(prefix.Length, 1);
-        handler.AppendLiteral(prefix);
-        handler.AppendFormatted(digits);
-        return handler.ToStringAndClear();
+        return string.Concat(prefix.AsSpan(), digits);
     }
 }
